@@ -178,7 +178,7 @@ $wooswipe_options = get_option('wooswipe_options');
                 <ul class="thumbnail-nav">
                     <?php for ($i = 0; $i < count($finalArray); $i++) {
                         $image_link = wp_get_attachment_url($finalArray[$i]);
-                        if (!$image_link) {
+                        if (!$image_link || $image_link == wc_placeholder_img_src()) {
                             continue;
                         }
                         addImageThumbnail($finalArray[$i], $i, $zoomed_image_size);
