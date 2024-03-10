@@ -31,17 +31,44 @@ $wooswipe_options = get_option('wooswipe_options');
         $attachment_count = count($product->get_gallery_image_ids());
     }
 
+    function is_thumbnail_a_placeholder( $thumbnail_id ) {
+        return $thumbnail_id == 4111;
+    }
+
+    function get_thumbnail_from_variations() {
+        global $product;
+
+        $variable = new WC_Product_Variable( $product->get_id() );
+
+        foreach ( $variable->get_available_variations() as $variation ) {
+            if ( ! is_thumbnail_a_placeholder( $variation['image_id'] ) ) {
+                return $variation['image_id'];
+            }
+        }
+    }
+
     if (has_post_thumbnail()) {
-        $thumbnail_id   = get_post_thumbnail_id();
+        $thumbnail_id = get_post_thumbnail_id();
+
+        if ( is_thumbnail_a_placeholder( $thumbnail_id ) ) {
+            $variation_thumbnail_id = get_thumbnail_from_variations();
+
+            if ( $variation_thumbnail_id ) {
+                $thumbnail_id = $variation_thumbnail_id;
+            }
+        }
+
         $image_title    = !empty(get_the_excerpt($thumbnail_id)) ? esc_attr(get_the_excerpt($thumbnail_id)) : esc_attr(get_the_title($thumbnail_id));
         $image_link     = wp_get_attachment_url($thumbnail_id);
+
         $alt    = get_post_meta($thumbnail_id, '_wp_attachment_image_alt', true);
         $alt    = !empty($alt) ? $alt : esc_attr(get_the_title($thumbnail_id));
         $hq     = wp_get_attachment_image_src($thumbnail_id, apply_filters('wooswipe_zoomed_image_size', $zoomed_image_size));
 
-        $image  = get_the_post_thumbnail(
-            $post->ID,
+        $image = wp_get_attachment_image(
+            $thumbnail_id,
             apply_filters('single_product_large_thumbnail_size', 'shop_single'),
+            false,
             array(
                 'title'     => $image_title,
                 'data-hq'   => $hq[0],
@@ -49,7 +76,7 @@ $wooswipe_options = get_option('wooswipe_options');
                 'data-h'    => $hq[2],
                 'loading'   => false,
                 'alt'       => $alt,
-            )
+            ), 
         );
 
         $gallery = $attachment_count > 0 ? '[product-gallery]' : '';
@@ -103,8 +130,6 @@ $wooswipe_options = get_option('wooswipe_options');
                     'height'    => '100'
                 )
             );
-
-
 
             $html = sprintf('<li>');
             $html .= sprintf(
